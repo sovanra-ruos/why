@@ -11,13 +11,22 @@ interface GitCommandModalProps {
     clear: () => void;
 }
 
-export function GitCommandModal({ isOpen, onClose, commands,clear }: GitCommandModalProps) {
+export function GitCommandModal({ isOpen, onClose, commands, clear }: GitCommandModalProps) {
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+    const [copiedAll, setCopiedAll] = useState<boolean>(false);
 
     const copyToClipboard = (text: string, index: number) => {
         navigator.clipboard.writeText(text).then(() => {
             setCopiedIndex(index);
             setTimeout(() => setCopiedIndex(null), 2000);
+        });
+    };
+
+    const copyAllToClipboard = () => {
+        const allCommands = commands.join('\n');
+        navigator.clipboard.writeText(allCommands).then(() => {
+            setCopiedAll(true);
+            setTimeout(() => setCopiedAll(false), 2000);
         });
     };
 
@@ -70,7 +79,20 @@ export function GitCommandModal({ isOpen, onClose, commands,clear }: GitCommandM
                     </AnimatePresence>
                 </div>
                 <div className="mt-6 text-center">
-                    <p className="text-sm text-zinc-400">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={copyAllToClipboard}
+                        className="text-zinc-400 hover:text-emerald-500 transition-colors duration-200"
+                    >
+                        {copiedAll ? (
+                            <Check className="h-4 w-4 mr-2" />
+                        ) : (
+                            <Copy className="h-4 w-4 mr-2" />
+                        )}
+                        Copy All
+                    </Button>
+                    <p className="text-sm text-zinc-400 mt-2">
                         Run these commands in your project directory to set up Git
                     </p>
                 </div>
@@ -78,4 +100,3 @@ export function GitCommandModal({ isOpen, onClose, commands,clear }: GitCommandM
         </Dialog>
     )
 }
-

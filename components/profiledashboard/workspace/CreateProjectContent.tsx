@@ -58,7 +58,7 @@ const projectTypes = [
         icon: Share2,
         color: 'text-blue-600',
         bgColor: 'bg-blue-100',
-        label: 'Subworkspace',
+        label: 'Microservice',
         description: 'Create a subworkspace to organize your projects better.'
     },
 ] as const

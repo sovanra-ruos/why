@@ -1,24 +1,12 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { ChevronRight, Plus, FileText, ChevronDown, MoreVertical, Sparkles, Code, ArrowRight, GripVertical, X } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useEffect, useState, useCallback } from "react"
+import { ChevronRight, Plus, FileText, MoreVertical, Sparkles, Code, ArrowRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -27,26 +15,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import ERDDiagram from "@/components/profiledashboard/workspace/service/ERDDiagram";
-import { SpringInitializer } from "@/components/profiledashboard/workspace/service/SpringInitializer";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import ERDDiagram from "@/components/profiledashboard/workspace/service/ERDDiagram"
+import { SpringInitializer } from "@/components/profiledashboard/workspace/service/SpringInitializer"
 import {
   useBuildSpringServiceMutation,
   useCreateExistingProjectMutation,
   useDeleteSpringProjectMutation,
   useGetBuildNumberInFolderQuery,
   useGetProjectsQuery,
-} from "@/redux/api/projectApi";
-import Link from "next/link";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/redux/api/projectApi"
+import Link from "next/link"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,7 +38,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog"
+import { AnimatePresence } from "framer-motion"
+import { useGetMeQuery } from "@/redux/api/userApi"
+import { useToast } from "@/hooks/use-toast"
+import { GitCommandModal } from "@/components/profiledashboard/workspace/GitCommandModal"
 import {
   DndContext,
   closestCenter,
@@ -64,189 +50,249 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
+  type DragEndEvent,
+} from "@dnd-kit/core"
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { motion, AnimatePresence } from "framer-motion";
-import { GitCommandModal } from "@/components/profiledashboard/workspace/GitCommandModal";
-import { useGetMeQuery } from "@/redux/api/userApi";
-import {useToast} from "@/hooks/use-toast";
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import { GripVertical, Loader2, CheckCircle } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export type PropsParams = {
-  params: Promise<{ name: string }>;
-};
+  params: Promise<{ name: string }>
+}
 
 type SpringProjectType = {
-  uuid: string;
-  name: string;
-  folder: string;
-  group: string;
-  dependencies: string[];
-  branch: string;
-  namespace: string;
-  git: string;
-};
+  uuid: string
+  name: string
+  folder: string
+  group: string
+  dependencies: string[]
+  branch: string
+  namespace: string
+  git: string
+}
 
 export type SpringProjectResponse = {
-  next: boolean;
-  previous: boolean;
-  total: number;
-  totalElements: number;
-  results: SpringProjectType[];
-};
+  next: boolean
+  previous: boolean
+  total: number
+  totalElements: number
+  results: SpringProjectType[]
+}
 
 type BuildHistoryItem = {
-  buildNumber: number;
-  status: "BUILDING" | "SUCCESS" | "FAILURE";
-};
+  buildNumber: number
+  status: "BUILDING" | "SUCCESS" | "FAILURE"
+}
 
 interface ErrorResponse {
-  status?: string | number;
-  originalStatus?: number;
+  status?: string | number
+  originalStatus?: number
   data?: {
-    message?: string;
-  };
+    message?: string
+  }
+}
+
+interface SortableItemProps {
+  id: string
+  children: React.ReactNode
+}
+
+function SortableItem({ id, children }: SortableItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+      <li ref={setNodeRef} style={style} {...attributes} {...listeners} className="cursor-move">
+        {children}
+      </li>
+  )
 }
 
 export default function SubWorkspacePage(props: PropsParams) {
-  const [params, setParams] = useState<{ name: string } | null>(null);
-  const [isCreateProjectDialogOpen, setIsCreateProjectDialogOpen] =
-      useState(false);
-  const [isSpringInitializerOpen, setIsSpringInitializerOpen] = useState(false);
-  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const [isDeployDialogOpen, setIsDeployDialogOpen] = useState(false);
-  const [buildSpringService] = useBuildSpringServiceMutation();
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [projectToDelete, setProjectToDelete] =
-      useState<SpringProjectType | null>(null);
-  const [deleteConfirmationName, setDeleteConfirmationName] = useState("");
-  const [deleteConfirmationError, setDeleteConfirmationError] = useState("");
-  const [existingProjectName, setExistingProjectName] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [params, setParams] = useState<{ name: string } | null>(null)
+  const [isCreateProjectDialogOpen, setIsCreateProjectDialogOpen] = useState(false)
+  const [isSpringInitializerOpen, setIsSpringInitializerOpen] = useState(false)
+  const [selectedProjects, setSelectedProjects] = useState<SpringProjectType[]>([])
+  const [isDeployDialogOpen, setIsDeployDialogOpen] = useState(false)
+  const [buildSpringService] = useBuildSpringServiceMutation()
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [projectToDelete, setProjectToDelete] = useState<SpringProjectType | null>(null)
+  const [deleteConfirmationName, setDeleteConfirmationName] = useState("")
+  const [deleteConfirmationError, setDeleteConfirmationError] = useState("")
+  const [existingProjectName, setExistingProjectName] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
 
-  const [gitName, setGitName] = useState<string | null>(null);
+  const [gitName, setGitName] = useState<string | null>(null)
 
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [createExistingProject] = useCreateExistingProjectMutation();
+  const [selectedServices, setSelectedServices] = useState<string[]>([])
+  const [createExistingProject] = useCreateExistingProjectMutation()
 
-  const [deleteSpringProject] = useDeleteSpringProjectMutation();
-  const [isGitCommandModalOpen, setIsGitCommandModalOpen] = useState(false);
+  const [deleteSpringProject] = useDeleteSpringProjectMutation()
+  const [isGitCommandModalOpen, setIsGitCommandModalOpen] = useState(false)
 
-  const {toast} = useToast();
+  const { toast } = useToast()
 
-  const { data: profile } = useGetMeQuery();
+  const { data: profile } = useGetMeQuery()
 
-  console.log(profile);
+  console.log(profile)
 
   useEffect(() => {
-    props.params.then(setParams);
-  }, [props.params]);
+    props.params.then(setParams)
+  }, [props.params])
 
   useEffect(() => {
     if (params) {
-      console.log(params.name);
+      console.log(params.name)
     }
-  }, [params]);
+  }, [params])
 
   const { data, refetch } = useGetProjectsQuery({
     subWorkspace: params?.name ?? "",
     page: 0,
     size: 10,
-  }) as unknown as { data: SpringProjectResponse; refetch: () => void };
+  }) as unknown as { data: SpringProjectResponse; refetch: () => void }
 
-  const springProjects = data?.results ?? [];
+  const springProjects = data?.results ?? []
 
   const { data: buildNumber, refetch: build } = useGetBuildNumberInFolderQuery({
     folder: params?.name ?? "",
     name: params?.name ?? "",
-  });
+  })
 
-  const handleDeployProject = () => {
-    console.log("Deploying projects:", selectedProjects);
-    setIsDeployDialogOpen(false);
-  };
+  const sensors = useSensors(
+      useSensor(PointerSensor),
+      useSensor(KeyboardSensor, {
+        coordinateGetter: sortableKeyboardCoordinates,
+      }),
+  )
 
-  const handleBuildProject = () => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (active.id !== over?.id) {
+      setSelectedProjects((items) => {
+        const oldIndex = items.findIndex((item) => item.uuid === active.id)
+        const newIndex = items.findIndex((item) => item.uuid === over?.id)
+        return arrayMove(items, oldIndex, newIndex)
+      })
+    }
+  }, [])
+
+  const handleProjectSelect = useCallback(
+      (projectUuid: string) => {
+        const project = springProjects.find((p) => p.uuid === projectUuid)
+        if (project && !selectedProjects.some((p) => p.uuid === projectUuid)) {
+          setSelectedProjects((prevProjects) => [...prevProjects, project])
+        }
+      },
+      [selectedProjects, springProjects],
+  )
+
+  const removeProject = useCallback((projectUuid: string) => {
+    setSelectedProjects((prevProjects) => prevProjects.filter((p) => p.uuid !== projectUuid))
+  }, [])
+
+  const handleBuildProject = useCallback(async () => {
+    const selectedProjectNames = selectedProjects.map((project) => project.name)
+    console.log("Building project with selected services:", selectedProjectNames)
+    setIsLoading(true)
+    setIsSuccess(false)
     try {
-      buildSpringService({
+      const result = await buildSpringService({
         folder: params?.name ?? "",
         name: params?.name ?? "",
-        serviceName: selectedProjects,
-      });
-      setIsDeployDialogOpen(false);
+        serviceName: selectedProjectNames,
+      })
+      console.log(result)
+      setIsSuccess(true)
     } catch (error) {
-      console.log(error);
-      build();
+      console.log(error)
+      toast({
+        title: "Error",
+        description: "Failed to build the project. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      })
+    } finally {
+      toast({
+        title: "Build Initiated",
+        description: "Your project build has been initiated.",
+        duration: 3000,
+      })
+      build()
+      setIsLoading(false)
+      setIsDeployDialogOpen(false)
     }
-  };
+  }, [selectedProjects, params?.name, buildSpringService])
 
   const handleDeleteSpringProject = async (project: SpringProjectType) => {
     try {
       const result = await deleteSpringProject({
         folder: params?.name ?? "",
         name: project.name,
-      });
+      })
 
-      console.log(result);
+      console.log(result)
     } catch (error) {
-      console.log(error);
+      console.log(error)
     } finally {
-      refetch();
-      setIsDeleteDialogOpen(false);
+      refetch()
+      setIsDeleteDialogOpen(false)
     }
-  };
+  }
 
   const handleDeleteProject = (project: SpringProjectType) => {
-    setProjectToDelete(project);
-    setIsDeleteDialogOpen(true);
-  };
+    setProjectToDelete(project)
+    setIsDeleteDialogOpen(true)
+  }
 
-  const handleDeleteConfirmationNameChange = (
-      e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setDeleteConfirmationName(e.target.value);
-    setDeleteConfirmationError("");
-  };
+  const handleDeleteConfirmationNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDeleteConfirmationName(e.target.value)
+    setDeleteConfirmationError("")
+  }
 
   const confirmDeleteProject = () => {
     if (projectToDelete && projectToDelete.name === deleteConfirmationName) {
-      handleDeleteSpringProject(projectToDelete);
-      setProjectToDelete(null);
-      setDeleteConfirmationName("");
-      setDeleteConfirmationError("");
-    } else if (
-        projectToDelete &&
-        projectToDelete.name !== deleteConfirmationName
-    ) {
-      setDeleteConfirmationError("Project name does not match");
+      handleDeleteSpringProject(projectToDelete)
+      setProjectToDelete(null)
+      setDeleteConfirmationName("")
+      setDeleteConfirmationError("")
+    } else if (projectToDelete && projectToDelete.name !== deleteConfirmationName) {
+      setDeleteConfirmationError("Project name does not match")
     }
-  };
+  }
 
   const handleCreateProject = (option: "new" | "existing") => {
     if (option === "new") {
-      setIsSpringInitializerOpen(true);
-      setIsCreateProjectDialogOpen(false);
+      setIsSpringInitializerOpen(true)
+      setIsCreateProjectDialogOpen(false)
     } else if (option === "existing") {
-      setExistingProjectName(""); // Reset the name
+      setExistingProjectName("") // Reset the name
     }
-  };
+  }
 
   const handleCreateExistingProject = async (name: string) => {
     if (!name || error) {
-      setError("Please enter a valid project name");
-      return;
+      setError("Please enter a valid project name")
+      return
     }
 
-    const existingProjectName = name + Math.floor(Math.random() * 1000);
+    const existingProjectName = name + Math.floor(Math.random() * 1000)
 
-    setGitName(existingProjectName);
+    setGitName(existingProjectName)
 
     try {
       const result = await createExistingProject({
@@ -255,117 +301,52 @@ export default function SubWorkspacePage(props: PropsParams) {
         servicesNames: selectedServices,
       }).unwrap()
 
-
-
-      console.log(result);
+      console.log(result)
     } catch (err) {
+      const error = err as ErrorResponse
 
-      const error = err as ErrorResponse;
-
-      if (error?.status === 'PARSING_ERROR' && error?.originalStatus === 200) {
+      if (error?.status === "PARSING_ERROR" && error?.originalStatus === 200) {
         toast({
           title: "Success",
-          description:
-              error?.data?.message ||
-              `ProjectName "${name}" created successfully!`,
+          description: error?.data?.message || `ProjectName "${name}" created successfully!`,
           variant: "success",
           duration: 3000,
-        });
-        setIsCreateProjectDialogOpen(false);
-        setSelectedServices([]);
-        setIsGitCommandModalOpen(true);
-        refetch();
-      }else {
+        })
+        setIsCreateProjectDialogOpen(false)
+        setSelectedServices([])
+        setIsGitCommandModalOpen(true)
+        refetch()
+      } else {
         toast({
           title: "Error",
-          description:
-              error?.data?.message || "Failed to create project. Please try again.",
+          description: error?.data?.message || "Failed to create project. Please try again.",
           variant: "error",
           duration: 5000,
-        });
+        })
       }
 
-      console.log(error);
+      console.log(error)
     }
-  };
-
-  const sensors = useSensors(
-      useSensor(PointerSensor),
-      useSensor(KeyboardSensor, {
-        coordinateGetter: sortableKeyboardCoordinates,
-      }),
-  );
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.trim();
-    setExistingProjectName(value);
+    const value = e.target.value.trim()
+    setExistingProjectName(value)
     if (!value) {
-      setError("Project name cannot be empty");
+      setError("Project name cannot be empty")
     } else if (value.length < 3) {
-      setError("Project name must be at least 3 characters long");
+      setError("Project name must be at least 3 characters long")
     } else if (value.length > 50) {
-      setError("Project name must not exceed 50 characters");
+      setError("Project name must not exceed 50 characters")
     } else if (!/^[a-zA-Z0-9-_]+$/.test(value)) {
-      setError("Project name can only contain letters, numbers, hyphens, and underscores");
+      setError("Project name can only contain letters, numbers, hyphens, and underscores")
     } else {
-      setError(null);
+      setError(null)
     }
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      setSelectedServices((items) => {
-        const oldIndex = items.indexOf(active.id.toString());
-        const newIndex = items.indexOf(over.id.toString());
-
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
-  };
-
-  function SortableItem(props: { id: string }) {
-    const { attributes, listeners, setNodeRef, transform, transition } =
-        useSortable({ id: props.id });
-
-    const style = {
-      transform: CSS.Transform.toString(transform),
-      transition,
-    };
-
-    return (
-        <motion.li
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            className="bg-primary text-primary-foreground px-4 py-2 rounded-md flex justify-between items-center mb-2 cursor-move"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.2 }}
-        >
-        <span className="flex items-center">
-          <GripVertical className="mr-2 h-4 w-4" />
-          {props.id}
-        </span>
-          <Button
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                  setSelectedServices(selectedServices.filter((s) => s !== props.id))
-              }
-              className="text-primary-foreground hover:text-primary-foreground/80"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </motion.li>
-    );
   }
 
   if (!profile) {
-    return null;
+    return null
   }
 
   const gitCommands = [
@@ -374,7 +355,7 @@ export default function SubWorkspacePage(props: PropsParams) {
     "git add .",
     'git commit -m "message"',
     "git push --set-upstream origin main",
-  ];
+  ]
 
   return (
       <div className="flex-1 space-y-6 p-8">
@@ -386,18 +367,11 @@ export default function SubWorkspacePage(props: PropsParams) {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-purple-500">
-              Spring Microservices
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Manage Spring microservice projects and their relationships
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-purple-500">Spring Microservices</h1>
+            <p className="text-lg text-muted-foreground">Manage Spring microservice projects and their relationships</p>
           </div>
           <div className="flex space-x-2">
-            <Dialog
-                open={isDeployDialogOpen}
-                onOpenChange={setIsDeployDialogOpen}
-            >
+            <Dialog open={isDeployDialogOpen} onOpenChange={setIsDeployDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-purple-500 hover:bg-purple-700">
                   <Plus className="mr-2 h-4 w-4" />
@@ -406,93 +380,68 @@ export default function SubWorkspacePage(props: PropsParams) {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl text-purple-500">Select Services</DialogTitle>
-                  <DialogDescription>
-                    Choose the services you want to use
-                  </DialogDescription>
+                  <DialogTitle className="text-2xl text-purple-500">Select and Order Services</DialogTitle>
+                  <DialogDescription>Choose and order the services for deployment</DialogDescription>
                 </DialogHeader>
                 <div className="mt-4">
-                  <div className="p-4 border rounded-lg space-y-4">
-                    <div className="text-sm text-muted-foreground">
-                      Selected services:
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedProjects.map((projectName) => {
-                        const project = springProjects.find(
-                            (p) => p.name === projectName,
-                        );
-                        return project ? (
-                            <Badge
-                                key={project.name}
-                                variant="secondary"
-                                className="bg-purple-100 text-purple-700 hover:bg-purple-200"
-                            >
-                              {project.name}
-                            </Badge>
-                        ) : null;
-                      })}
-                    </div>
+                  <Select onValueChange={handleProjectSelect} disabled={isLoading}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {springProjects.map((project) => (
+                          <SelectItem key={project.uuid} value={project.uuid}>
+                            {project.name}
+                          </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <div className="mt-4">
+                    <h3 className="text-lg font-semibold mb-2 text-red-500">Select services order(Service run first must be on top) </h3>
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                      <SortableContext items={selectedProjects.map((p) => p.uuid)} strategy={verticalListSortingStrategy}>
+                        <ul className="space-y-2">
+                          {selectedProjects.map((project) => (
+                              <SortableItem key={project.uuid} id={project.uuid}>
+                                <div className="flex items-center justify-between space-x-2 p-3 bg-gray-100 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                                  <div className="flex items-center space-x-2">
+                                    <GripVertical className="h-5 w-5 text-gray-500" />
+                                    <span className="font-medium text-gray-700">{project.name}</span>
+                                  </div>
+                                  <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeProject(project.uuid)}
+                                      className="text-red-500 hover:text-red-700"
+                                      disabled={isLoading}
+                                  >
+                                    Remove
+                                  </Button>
+                                </div>
+                              </SortableItem>
+                          ))}
+                        </ul>
+                      </SortableContext>
+                    </DndContext>
                   </div>
-                  <Collapsible className="mt-4">
-                    <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border p-4 text-left text-sm font-medium hover:bg-gray-100">
-                      {selectedProjects.length} services selected
-                      <ChevronDown className="h-4 w-4" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="mt-2">
-                      <div className="rounded-lg border p-4 space-y-3">
-                        {springProjects.map((project) => (
-                            <div
-                                key={project.name}
-                                className="flex items-center space-x-2"
-                            >
-                              <Checkbox
-                                  id={project.name}
-                                  checked={selectedProjects.includes(project.name)}
-                                  onCheckedChange={(checked) => {
-                                    setSelectedProjects(
-                                        checked
-                                            ? [...selectedProjects, project.name]
-                                            : selectedProjects.filter(
-                                                (name) => name !== project.name,
-                                            ),
-                                    );
-                                  }}
-                                  className="border-purple-500 text-purple-500"
-                              />
-                              <label
-                                  htmlFor={project.name}
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                              >
-                                {project.name}
-                              </label>
-                            </div>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
                 </div>
                 <DialogFooter className="mt-6 space-x-2">
-                  <Button onClick={handleBuildProject} variant="outline">
-                    Build
-                  </Button>
                   <Button
-                      onClick={handleDeployProject}
-                      className="bg-purple-600 hover:bg-purple-700"
+                      onClick={handleBuildProject}
+                      className={`${isSuccess ? "bg-green-500" : "bg-purple-500"} hover:bg-opacity-90`}
+                      disabled={isLoading || isSuccess}
                   >
-                    Deploy
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isSuccess && <CheckCircle className="mr-2 h-4 w-4" />}
+                    {isLoading ? "Building..." : isSuccess ? "Built!" : "Build"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <Dialog
-                open={isCreateProjectDialogOpen}
-                onOpenChange={setIsCreateProjectDialogOpen}
-            >
+            <Dialog open={isCreateProjectDialogOpen} onOpenChange={setIsCreateProjectDialogOpen}>
               <DialogTrigger asChild>
-                <Button
-                    className="bg-purple-500 hover:bg-purple-700"
-                    onClick={() => setIsCreateProjectDialogOpen(true)}
-                >
+                <Button className="bg-purple-500 hover:bg-purple-700" onClick={() => setIsCreateProjectDialogOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Spring Project
                 </Button>
@@ -518,8 +467,7 @@ export default function SubWorkspacePage(props: PropsParams) {
                       </CardHeader>
                       <CardContent>
                         <p className="text-center text-sm text-muted-foreground">
-                          Start fresh with a new Spring project using our
-                          initializer
+                          Start fresh with a new Spring project using our initializer
                         </p>
                       </CardContent>
                     </Card>
@@ -540,10 +488,7 @@ export default function SubWorkspacePage(props: PropsParams) {
                   </div>
                   {existingProjectName !== null && (
                       <div className="space-y-4 p-6 bg-muted rounded-lg">
-                        <Label
-                            htmlFor="existing-project-name"
-                            className="text-lg font-semibold"
-                        >
+                        <Label htmlFor="existing-project-name" className="text-lg font-semibold">
                           Project Name
                         </Label>
                         <Input
@@ -556,30 +501,21 @@ export default function SubWorkspacePage(props: PropsParams) {
                         />
                         {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
                         <div className="space-y-2">
-                          <Label
-                              htmlFor="service-select"
-                              className="text-lg font-semibold"
-                          >
-                            Select Services
+                          <Label htmlFor="service-select" className="text-lg font-semibold">
+                            Select the services your microservice needs (e.g., Eureka for service discovery)
                           </Label>
                           <div className="flex space-x-2 flex-wrap">
                             {springProjects.map((project) => (
                                 <Button
                                     key={project.uuid}
-                                    variant={
-                                      selectedServices.includes(project.name)
-                                          ? "secondary"
-                                          : "outline"
-                                    }
+                                    variant={selectedServices.includes(project.name) ? "secondary" : "outline"}
                                     className="mb-2"
                                     onClick={() => {
                                       setSelectedServices((prevSelected) =>
                                           prevSelected.includes(project.name)
-                                              ? prevSelected.filter(
-                                                  (item) => item !== project.name,
-                                              )
+                                              ? prevSelected.filter((item) => item !== project.name)
                                               : [...prevSelected, project.name],
-                                      );
+                                      )
                                     }}
                                 >
                                   {project.name}
@@ -588,30 +524,49 @@ export default function SubWorkspacePage(props: PropsParams) {
                           </div>
                         </div>
                         <div className="mt-4">
-                          <Label className="text-lg font-semibold mb-2 block">
-                            Selected Services (Drag to reorder)
-                          </Label>
+                          <Label className="text-lg font-semibold mb-2 block">Selected Services (Drag to reorder)</Label>
                           <DndContext
                               sensors={sensors}
                               collisionDetection={closestCenter}
-                              onDragEnd={handleDragEnd}
+                              onDragEnd={(event) => {
+                                const { active, over } = event
+                                if (active.id !== over?.id) {
+                                  setSelectedServices((items) => {
+                                    const oldIndex = items.indexOf(active.id as string)
+                                    const newIndex = items.indexOf(over?.id as string)
+                                    return arrayMove(items, oldIndex, newIndex)
+                                  })
+                                }
+                              }}
                           >
-                            <SortableContext
-                                items={selectedServices}
-                                strategy={verticalListSortingStrategy}
-                            >
-                              <AnimatePresence>
-                                {selectedServices.map((service) => (
-                                    <SortableItem key={service} id={service} />
-                                ))}
-                              </AnimatePresence>
+                            <SortableContext items={selectedServices} strategy={verticalListSortingStrategy}>
+                              <ul className="space-y-2">
+                                <AnimatePresence>
+                                  {selectedServices.map((service) => (
+                                      <SortableItem key={service} id={service}>
+                                        <div className="flex items-center justify-between space-x-2 p-3 bg-gray-100 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                                          <div className="flex items-center space-x-2">
+                                            <GripVertical className="h-5 w-5 text-gray-500" />
+                                            <span className="font-medium text-gray-700">{service}</span>
+                                          </div>
+                                          <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => setSelectedServices(selectedServices.filter((s) => s !== service))}
+                                              className="text-red-500 hover:text-red-700"
+                                          >
+                                            Remove
+                                          </Button>
+                                        </div>
+                                      </SortableItem>
+                                  ))}
+                                </AnimatePresence>
+                              </ul>
                             </SortableContext>
                           </DndContext>
                         </div>
                         <Button
-                            onClick={() =>
-                                handleCreateExistingProject(existingProjectName)
-                            }
+                            onClick={() => handleCreateExistingProject(existingProjectName)}
                             className="w-full bg-primary hover:bg-primary/90"
                             disabled={!existingProjectName || !!error}
                         >
@@ -634,10 +589,7 @@ export default function SubWorkspacePage(props: PropsParams) {
             >
               Spring Projects
             </TabsTrigger>
-            <TabsTrigger
-                value="erd"
-                className="flex-1 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
-            >
+            <TabsTrigger value="erd" className="flex-1 data-[state=active]:bg-purple-500 data-[state=active]:text-white">
               Project Relationships
             </TabsTrigger>
             <TabsTrigger
@@ -655,9 +607,7 @@ export default function SubWorkspacePage(props: PropsParams) {
                   {springProjects.map((project) => (
                       <Card key={project.uuid}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">
-                            {project.name}
-                          </CardTitle>
+                          <CardTitle className="text-sm font-medium">{project.name}</CardTitle>
                           <div className="flex items-center space-x-2">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -668,17 +618,9 @@ export default function SubWorkspacePage(props: PropsParams) {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem>
-                                  <Link
-                                      href={`/workspace/sub-workspace/${params?.name}/${project.name}`}
-                                  >
-                                    Go to Detail
-                                  </Link>
+                                  <Link href={`/workspace/sub-workspace/${params?.name}/${project.name}`}>Go to Detail</Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onSelect={() => handleDeleteProject(project)}
-                                >
-                                  Delete
-                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleDeleteProject(project)}>Delete</DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -690,16 +632,12 @@ export default function SubWorkspacePage(props: PropsParams) {
                               <span>{project.branch}</span>
                             </div>
                             <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Namespace:
-                        </span>
+                              <span className="text-muted-foreground">Namespace:</span>
                               <span>{project.namespace}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Git:</span>
-                              <span className="truncate max-w-[150px]">
-                          {project.git}
-                        </span>
+                              <span className="truncate max-w-[150px]">{project.git}</span>
                             </div>
                           </div>
                         </CardContent>
@@ -708,9 +646,7 @@ export default function SubWorkspacePage(props: PropsParams) {
                 </div>
             ) : (
                 <div className="flex justify-center items-center h-64">
-                  <p className="text-muted-foreground">
-                    No Spring Projects available.
-                  </p>
+                  <p className="text-muted-foreground">No Spring Projects available.</p>
                 </div>
             )}
           </TabsContent>
@@ -730,9 +666,7 @@ export default function SubWorkspacePage(props: PropsParams) {
                 </Card>
             ) : (
                 <div className="flex justify-center items-center h-64">
-                  <p className="text-muted-foreground">
-                    No projects available to show relationships.
-                  </p>
+                  <p className="text-muted-foreground">No projects available to show relationships.</p>
                 </div>
             )}
           </TabsContent>
@@ -790,9 +724,7 @@ export default function SubWorkspacePage(props: PropsParams) {
                 </Card>
             ) : (
                 <div className="flex justify-center items-center h-64">
-                  <p className="text-muted-foreground">
-                    No build history available.
-                  </p>
+                  <p className="text-muted-foreground">No build history available.</p>
                 </div>
             )}
           </TabsContent>
@@ -801,27 +733,21 @@ export default function SubWorkspacePage(props: PropsParams) {
         <SpringInitializer
             isOpen={isSpringInitializerOpen}
             onClose={() => {
-              setIsSpringInitializerOpen(false);
-              setExistingProjectName("");
+              setIsSpringInitializerOpen(false)
+              setExistingProjectName("")
             }}
             folder={params?.name ?? ""}
             springProjects={springProjects}
             refetch={refetch}
         />
 
-        <AlertDialog
-            open={isDeleteDialogOpen}
-            onOpenChange={setIsDeleteDialogOpen}
-        >
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>
-                Are you sure you want to delete this project?
-              </AlertDialogTitle>
+              <AlertDialogTitle>Are you sure you want to delete this project?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the
-                project &#34;{projectToDelete?.name}&#34; and remove all of its
-                data. To confirm, please enter the project name below.
+                This action cannot be undone. This will permanently delete the project &#34;{projectToDelete?.name}&#34;
+                and remove all of its data. To confirm, please enter the project name below.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="my-4">
@@ -832,24 +758,18 @@ export default function SubWorkspacePage(props: PropsParams) {
                   placeholder="Enter project name to confirm"
                   className="w-full p-2 border rounded"
               />
-              {deleteConfirmationError && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {deleteConfirmationError}
-                  </p>
-              )}
+              {deleteConfirmationError && <p className="text-red-500 text-sm mt-1">{deleteConfirmationError}</p>}
             </div>
             <AlertDialogFooter>
               <AlertDialogCancel
                   onClick={() => {
-                    setDeleteConfirmationName("");
-                    setDeleteConfirmationError("");
+                    setDeleteConfirmationName("")
+                    setDeleteConfirmationError("")
                   }}
               >
                 Cancel
               </AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDeleteProject}>
-                Delete
-              </AlertDialogAction>
+              <AlertDialogAction onClick={confirmDeleteProject}>Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -860,6 +780,6 @@ export default function SubWorkspacePage(props: PropsParams) {
             clear={() => setExistingProjectName(null)}
         />
       </div>
-  );
+  )
 }
 
