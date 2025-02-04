@@ -35,10 +35,12 @@ export async function POST(request: NextRequest) {
     // https://git.cloudinator.cloud/argocd/chnage-version.git
 
     // Initialize Git repository and push to GitLab
-    await execCommand("git init --initial-branch=main ", projectPath);
+    await execCommand("git init --initial-branch=main", projectPath);
     await execCommand("git add .", projectPath);
     await execCommand(`git commit -m "Initial commit"`, projectPath);
     await execCommand(`git remote add origin https://git.cloudinator.cloud/cloudinator-ai/${projectId}.git`, projectPath);
+    await execCommand('git config --global user.name "Administrator"', projectPath);
+    await execCommand('git config --global user.email "gitlab_admin_a5a7a1@example.com"', projectPath);
     await execCommand("git push -u origin main", projectPath);
 
     return NextResponse.json({ success: true });
