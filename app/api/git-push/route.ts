@@ -1,12 +1,11 @@
-// src/app/api/create-repo/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { exec } from "child_process";
 import path from "path";
 import { promises as fs } from "fs";
 
-const execCommand = (command: string, cwd: string) => {
+const execShellScript = (scriptPath: string, args: string[], cwd: string) => {
   return new Promise((resolve, reject) => {
-    exec(command, { cwd }, (error, stdout, stderr) => {
+    exec(`sh ${scriptPath} ${args.join(' ')}`, { cwd }, (error, stdout, stderr) => {
       if (error) {
         reject(stderr);
       } else {
@@ -23,8 +22,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "projectId is required" }, { status: 400 });
     }
 
-
-
     const projectPath = path.join(process.cwd(), "tmp", projectId);
 
     // Ensure the project directory exists
@@ -32,16 +29,11 @@ export async function POST(request: NextRequest) {
 
     console.log("Creating Git repository for project:", projectId);
 
-    // https://git.cloudinator.cloud/argocd/chnage-version.git
+    // Path to the shell script
+    const scriptPath = path.join(process.cwd(), "create-repo.sh");
 
-    // Initialize Git repository and push to GitLab
-    await execCommand("git init --initial-branch=main", projectPath);
-    await execCommand("git add .", projectPath);
-    await execCommand(`git commit -m "Initial commit"`, projectPath);
-    await execCommand(`git remote add origin https://git.cloudinator.cloud/cloudinator-ai/${projectId}.git`, projectPath);
-    await execCommand('git config --global user.name "Administrator"', projectPath);
-    await execCommand('git config --global user.email "gitlab_admin_a5a7a1@example.com"', projectPath);
-    await execCommand("git push -u origin main", projectPath);
+    // Execute the shell script with projectId as a parameter
+    await execShellScript(scriptPath, [projectId], projectPath);
 
     return NextResponse.json({ success: true });
   } catch (error) {

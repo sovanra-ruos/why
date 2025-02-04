@@ -1,8 +1,8 @@
 # Use an official Node.js runtime as a parent image
 FROM node:18-alpine AS builder
 
-# Install libc6-compat for better compatibility
-RUN apk add --no-cache libc6-compat
+# Install necessary dependencies
+RUN apk add --no-cache libc6-compat git
 
 # Set the working directory to /app
 WORKDIR /app
@@ -25,12 +25,16 @@ RUN npm run build
 # Multi-stage build process for final image
 FROM node:18-alpine
 
-# Update, upgrade, and add dumb-init for proper signal handling
-RUN apk update && apk upgrade && apk add --no-cache dumb-init && \
+# Update, upgrade, and install necessary dependencies
+RUN apk update && apk upgrade && apk add --no-cache dumb-init git && \
     adduser -D nextuser
 
 # Set work dir as app
 WORKDIR /app
+
+RUN mkdir -p /app/tmp && \
+    chown -R nextuser:nextuser /app/tmp && \
+    chmod 777 /app/tmp  # Grant full read/write/execute permissions
 
 # Copy build artifacts with proper ownership
 COPY --chown=nextuser:nextuser --from=builder /app/public ./public
@@ -49,4 +53,6 @@ ENV HOST=0.0.0.0 \
     NODE_ENV=production
 
 # Use dumb-init to handle signal forwarding and process management
-CMD ["dumb-init", "node", "server.js"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+
+CMD ["node", "server.js"]
