@@ -41,6 +41,10 @@ COPY --chown=nextuser:nextuser --from=builder /app/public ./public
 COPY --chown=nextuser:nextuser --from=builder /app/.next/standalone ./
 COPY --chown=nextuser:nextuser --from=builder /app/.next/static ./.next/static
 
+# Copy create-repo.sh script and make it executable
+COPY --chown=nextuser:nextuser create-repo.sh /app/create-repo.sh
+RUN chmod +x /app/create-repo.sh
+
 # Set non-root user
 USER nextuser
 
