@@ -295,10 +295,18 @@ export const projectsApi = projectApi.injectEndpoints({
             }),
         }),
 
+        createRepository: builder.mutation<void, { name: string }>({
+            query: ({ name }) => ({
+                url: 'api/v1/gitlab/create-repository',
+                method: 'POST',
+                body: { name },
+            }),
+        }),
+
 
     }),
 })
 
 
 export const { useGetWorkspacesQuery, useCreateWorkspaceMutation, useUpdateWorkspaceMutation, useDeleteWorkspaceMutation,useCreateServiceDeploymentMutation ,useGetServiceDeploymentQuery,useGetServiceByNameQuery,useGetBuildInfoByNameQuery,useGetBuildingLogsQuery,useBuildServiceMutation,useCreateSubWorkspaceMutation,useGetSubWorkspacesQuery,useCreateProjectMutation,useGetProjectsQuery,useGetBuildNumberInFolderQuery,useBuildSpringServiceMutation,useGetProjectByNameQuery,useStopServiceDeploymentMutation,useStartServiceDeploymentMutation,useDeployZipServiceMutation,useDeleteServiceDeploymentMutation,useDeleteSubWorkSpaceMutation,useGetTestMutation,useGetMetadataQuery,useDeleteSpringProjectMutation,useGetRepositoryQuery,useCreateGitlabServiceMutation,useCreateExistingProjectMutation,useUpdateExistingServiceMutation,useDeploySpringServiceMutation,useCountWorkspaceQuery,
-useCountSubworkspacesQuery,useCountServiceQuery,useGetBuildAnalyticQuery,useCreateDatabaseMutation,useGetDatabaseServicesQuery,useRollbackServiceMutation} = projectsApi
+useCountSubworkspacesQuery,useCountServiceQuery,useGetBuildAnalyticQuery,useCreateDatabaseMutation,useGetDatabaseServicesQuery,useRollbackServiceMutation,useCreateRepositoryMutation} = projectsApi
