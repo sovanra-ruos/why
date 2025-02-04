@@ -163,15 +163,15 @@ export default function Page() {
             const branch = "main";
 
             // Generate a random 6-digit number
-            const randomSixDigitNumber = Math.floor(100000 + Math.random() * 900000);
+            const randomSixLetterString = Array.from({ length: 6 }, () => String.fromCharCode(97 + Math.floor(Math.random() * 26))).join('');
 
             const workspaceName = `${workspacesData?.[0]?.name}`;
 
             const response = await createServiceDeployment({
-                name: `${randomSixDigitNumber}`,
+                name: randomSixLetterString,
                 gitUrl: gitUrl,
                 branch: branch,
-                subdomain: `${randomSixDigitNumber}`,
+                subdomain: randomSixLetterString,
                 workspaceName: workspaceName,
                 type: "frontend",
                 token:''
