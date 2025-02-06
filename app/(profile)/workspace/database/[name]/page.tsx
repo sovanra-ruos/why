@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Database, User2, Server, Globe, Eye, EyeOff, ArrowLeft, Zap, Key } from "lucide-react"
+import { Database, User2, Server, Globe, Eye, EyeOff, ArrowLeft, Zap, Key, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { useGetDatabaseServicesQuery } from "@/redux/api/projectApi"
@@ -17,12 +17,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import {QuerySyntaxNotes} from "@/components/QuerySyntaxNotes";
-import {DatabaseDump} from "@/components/DatabaseDump";
-import DatabaseInfoCard from "@/components/DatabaseInfoCard";
-import {CopyButton} from "@/components/CopyButton";
-import {QueryResultTable} from "@/components/QueryResultTable";
-
+import { QuerySyntaxNotes } from "@/components/QuerySyntaxNotes"
+import { DatabaseDump } from "@/components/DatabaseDump"
+import DatabaseInfoCard from "@/components/DatabaseInfoCard"
+import { CopyButton } from "@/components/CopyButton"
+import { QueryResultTable } from "@/components/QueryResultTable"
 
 interface DatabaseDetailProps {
     params: Promise<{
@@ -40,9 +39,11 @@ export default function DatabaseDetail({ params }: DatabaseDetailProps) {
     const [insertValues, setInsertValues] = useState("")
     const [updateValues, setUpdateValues] = useState("")
     const [customQuery, setCustomQuery] = useState("")
+    const [customQueryInput, setCustomQueryInput] = useState("")
     const [result, setResult] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [queryResult, setQueryResult] = useState<never>()
+    const [isGenerating, setIsGenerating] = useState(false)
 
     // Unwrap the params Promise using React.use()
     const { name } = React.use(params)
@@ -224,6 +225,47 @@ export default function DatabaseDetail({ params }: DatabaseDetailProps) {
         }
     }
 
+    const generateCode = async (prompt: string) => {
+        setIsGenerating(true)
+        try {
+            const response = await fetch("/api/command", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt }),
+            })
+
+            if (!response.ok) throw new Error("Failed to generate code")
+
+            const data = await response.json()
+            // Remove SQL markdown formatting if present
+            const formattedResponse = data.response.replace(/^```sql\n|\n```$/g, "").trim()
+            setCustomQueryInput(formattedResponse)
+            setCustomQuery(formattedResponse)
+        } catch (error) {
+            console.error("Error generating code:", error)
+        } finally {
+            setIsGenerating(false)
+        }
+    }
+
+    const handleCustomQueryChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const value = e.target.value
+        setCustomQueryInput(value)
+    }
+
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault()
+            const value = customQueryInput.trim()
+            if (value.startsWith("/generate")) {
+                const prompt = value.replace("/generate", "").trim()
+                generateCode(prompt)
+            } else {
+                setCustomQuery(value)
+            }
+        }
+    }
+
     const renderQueryInputs = () => {
         const renderExistingInputs = () => {
             switch (queryType) {
@@ -309,12 +351,21 @@ export default function DatabaseDetail({ params }: DatabaseDetailProps) {
                     )
                 case "custom":
                     return (
-                        <Textarea
-                            placeholder="Enter your custom SQL query"
-                            value={customQuery}
-                            onChange={(e) => setCustomQuery(e.target.value)}
-                            className="mb-2 min-h-[200px]"
-                        />
+                        <div className="relative">
+                            <Textarea
+                                placeholder="Enter your custom SQL query or use /generate to create code"
+                                value={customQueryInput}
+                                onChange={handleCustomQueryChange}
+                                onKeyPress={handleKeyPress}
+                                className="mb-2 min-h-[200px] pr-24"
+                            />
+                            {isGenerating && (
+                                <div className="absolute right-2 top-2 flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Generating...
+                                </div>
+                            )}
+                        </div>
                     )
                 default:
                     return null
