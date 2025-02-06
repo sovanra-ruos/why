@@ -39,7 +39,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { AnimatePresence } from "framer-motion"
 import { useGetMeQuery } from "@/redux/api/userApi"
 import { useToast } from "@/hooks/use-toast"
 import { GitCommandModal } from "@/components/profiledashboard/workspace/GitCommandModal"
@@ -398,10 +397,20 @@ export default function SubWorkspacePage(props: PropsParams) {
                   </Select>
 
                   <div className="mt-4">
-                    <h3 className="text-lg font-semibold mb-2 text-red-500">Select services order(Service run first must be on top) </h3>
+                    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
+                      <h3 className="text-lg font-semibold mb-2">Important Note:</h3>
+                      <p className="text-sm">
+                        Please select and order the services based on your project workflow.
+                        <strong className="font-bold">
+                          {" "}
+                          The service that needs to run first must be at the top of the list.
+                        </strong>
+                      </p>
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2 text-purple-500">Select and Order Services</h3>
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                       <SortableContext items={selectedProjects.map((p) => p.uuid)} strategy={verticalListSortingStrategy}>
-                        <ul className="space-y-2">
+                        <ul className={`space-y-2 pr-2 ${selectedProjects.length > 3 ? "max-h-60 overflow-y-auto" : ""}`}>
                           {selectedProjects.map((project) => (
                               <SortableItem key={project.uuid} id={project.uuid}>
                                 <div className="flex items-center justify-between space-x-2 p-3 bg-gray-100 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -500,11 +509,25 @@ export default function SubWorkspacePage(props: PropsParams) {
                             required
                         />
                         {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                           <Label htmlFor="service-select" className="text-lg font-semibold">
-                            Select the services your microservice needs (e.g., Eureka for service discovery)
+                            Select the services your microservice needs
                           </Label>
-                          <div className="flex space-x-2 flex-wrap">
+                          <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4">
+                            <p className="text-sm">
+                              <strong>Note:</strong> You can select any services that your project needs to depend on, such
+                              as:
+                            </p>
+                            <ul className="list-disc list-inside mt-2 text-sm">
+                              <li>Eureka for service discovery</li>
+                              <li>Config Server for centralized configuration</li>
+                              <li>API Gateway for routing and filtering</li>
+                              <li>Any other microservices your project interacts with</li>
+                            </ul>
+                          </div>
+                          <div
+                              className={`flex space-x-2 flex-wrap pr-2 ${springProjects.length > 3 ? "max-h-40 overflow-y-auto" : ""}`}
+                          >
                             {springProjects.map((project) => (
                                 <Button
                                     key={project.uuid}
@@ -522,48 +545,6 @@ export default function SubWorkspacePage(props: PropsParams) {
                                 </Button>
                             ))}
                           </div>
-                        </div>
-                        <div className="mt-4">
-                          <Label className="text-lg font-semibold mb-2 block">Selected Services (Drag to reorder)</Label>
-                          <DndContext
-                              sensors={sensors}
-                              collisionDetection={closestCenter}
-                              onDragEnd={(event) => {
-                                const { active, over } = event
-                                if (active.id !== over?.id) {
-                                  setSelectedServices((items) => {
-                                    const oldIndex = items.indexOf(active.id as string)
-                                    const newIndex = items.indexOf(over?.id as string)
-                                    return arrayMove(items, oldIndex, newIndex)
-                                  })
-                                }
-                              }}
-                          >
-                            <SortableContext items={selectedServices} strategy={verticalListSortingStrategy}>
-                              <ul className="space-y-2">
-                                <AnimatePresence>
-                                  {selectedServices.map((service) => (
-                                      <SortableItem key={service} id={service}>
-                                        <div className="flex items-center justify-between space-x-2 p-3 bg-gray-100 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                                          <div className="flex items-center space-x-2">
-                                            <GripVertical className="h-5 w-5 text-gray-500" />
-                                            <span className="font-medium text-gray-700">{service}</span>
-                                          </div>
-                                          <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => setSelectedServices(selectedServices.filter((s) => s !== service))}
-                                              className="text-red-500 hover:text-red-700"
-                                          >
-                                            Remove
-                                          </Button>
-                                        </div>
-                                      </SortableItem>
-                                  ))}
-                                </AnimatePresence>
-                              </ul>
-                            </SortableContext>
-                          </DndContext>
                         </div>
                         <Button
                             onClick={() => handleCreateExistingProject(existingProjectName)}

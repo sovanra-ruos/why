@@ -1,21 +1,21 @@
 "use client"
 
-import {useState, useRef, useCallback} from "react"
-import {Button} from "@/components/ui/button"
-import {Card} from "@/components/ui/card"
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
-import {Textarea} from "@/components/ui/textarea"
-import {useToast} from "@/hooks/use-toast"
-import {CodePreview} from "@/components/code-preview"
-import {ImageUpload} from "@/components/image-upload"
-import {Code, FileText, Loader2, ImageIcon, Zap} from "lucide-react"
-import {Alert, AlertDescription} from "@/components/ui/alert"
+import { useState, useRef, useCallback } from "react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/use-toast"
+import { CodePreview } from "@/components/code-preview"
+import { ImageUpload } from "@/components/image-upload"
+import { Code, FileText, Loader2, ImageIcon, Zap } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import FileTree from "@/components/file-tree"
 import {
     useCreateRepositoryMutation,
     useCreateServiceDeploymentMutation,
-    useGetWorkspacesQuery
-} from "@/redux/api/projectApi";
+    useGetWorkspacesQuery,
+} from "@/redux/api/projectApi"
 
 // export interface ProjectResponse {
 //     projectId: string
@@ -36,14 +36,13 @@ export default function Page() {
     const [inputMode, setInputMode] = useState<"text" | "image">("text")
     const [prompt, setPrompt] = useState("")
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const {toast} = useToast()
-    const [createRepository] = useCreateRepositoryMutation();
-    const [createServiceDeployment] =
-        useCreateServiceDeploymentMutation();
+    const { toast } = useToast()
+    const [createRepository] = useCreateRepositoryMutation()
+    const [createServiceDeployment] = useCreateServiceDeploymentMutation()
 
-    const { data: workspacesData } = useGetWorkspacesQuery();
+    const { data: workspacesData } = useGetWorkspacesQuery()
 
-    console.log("workspacesData:", workspacesData);
+    console.log("workspacesData:", workspacesData)
 
     const handleImageAnalysis = useCallback(
         async (file: File, imagePrompt: string) => {
@@ -109,8 +108,8 @@ export default function Page() {
 
             const response = await fetch("/api/generate", {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({prompt}),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt }),
             })
 
             const data = await response.json()
@@ -156,16 +155,18 @@ export default function Page() {
 
     const handleDeploy = useCallback(async () => {
         try {
-            const projectId = localStorage.getItem("projectId");
+            const projectId = localStorage.getItem("projectId")
 
-            const gitUrl = `https://git.cloudinator.cloud/cloudinator-ai/${projectId}.git`;
+            const gitUrl = `https://git.cloudinator.cloud/cloudinator-ai/${projectId}.git`
 
-            const branch = "main";
+            const branch = "main"
 
             // Generate a random 6-digit number
-            const randomSixLetterString = Array.from({ length: 6 }, () => String.fromCharCode(97 + Math.floor(Math.random() * 26))).join('');
+            const randomSixLetterString = Array.from({ length: 6 }, () =>
+                String.fromCharCode(97 + Math.floor(Math.random() * 26)),
+            ).join("")
 
-            const workspaceName = `${workspacesData?.[0]?.name}`;
+            const workspaceName = `${workspacesData?.[0]?.name}`
 
             const response = await createServiceDeployment({
                 name: randomSixLetterString,
@@ -174,112 +175,115 @@ export default function Page() {
                 subdomain: randomSixLetterString,
                 workspaceName: workspaceName,
                 type: "frontend",
-                token:''
-            });
+                token: "",
+            })
 
-            console.log("Deploy response:", response);
+            console.log("Deploy response:", response)
 
             toast({
                 title: "Success",
                 description: "Files deployed successfully",
                 variant: "success",
-            });
+            })
         } catch (error) {
-            console.log("Error deploying files:", error);
+            console.log("Error deploying files:", error)
             toast({
                 title: "Error",
                 description: "Failed to deploy files",
                 variant: "error",
-            });
+            })
         }
-    }, [toast, workspacesData]);
+    }, [toast, workspacesData])
 
     const handlePushCode = useCallback(async () => {
         try {
-            const projectId = localStorage.getItem("projectId");
+            const projectId = localStorage.getItem("projectId")
 
             if (!projectId) {
-                throw new Error("No projectId found in localStorage");
+                throw new Error("No projectId found in localStorage")
             }
 
-            await createRepository({name: projectId});
+            await createRepository({ name: projectId })
 
             const response = await fetch("/api/git-push", {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({projectId}),
-            });
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ projectId }),
+            })
 
-            console.log("Push code response:", response);
+            console.log("Push code response:", response)
 
             if (!response.ok) {
-                throw new Error("Failed to make the project public");
+                throw new Error("Failed to make the project public")
             }
 
             toast({
                 title: "Success",
                 description: "Project made public successfully",
                 variant: "success",
-            });
+            })
         } catch (error) {
-            console.error("Error making project public:", error);
+            console.error("Error making project public:", error)
             toast({
                 title: "Error",
                 description: error instanceof Error ? error.message : "Failed to make project public",
                 variant: "error",
-            });
+            })
         }
-    }, [toast]);
+    }, [toast])
 
     return (
-        <div
-            className="flex h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-purple-900">
+        <div className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-purple-900">
             <div className="flex-1 flex flex-col">
                 <header className="border-b py-2 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80">
-                    <div className="container flex items-center justify-between h-14 px-4">
+                    <div className="container flex flex-col sm:flex-row items-center justify-between h-auto sm:h-14 px-4 py-2 sm:py-0">
                         <div className="flex items-center gap-4">
                             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">
                                 Cloudinator AI
                             </h1>
                             <p className="text-purple-600 dark:text-purple-400">Code Generator</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Button onClick={handlePushCode} variant="outline"
-                                    className="bg-white/50 dark:bg-gray-800/50">
+                        <div className="flex flex-col sm:flex-row items-center gap-2 mt-2 sm:mt-0">
+                            <Button
+                                onClick={handlePushCode}
+                                variant="outline"
+                                className="w-full sm:w-auto bg-white/50 dark:bg-gray-800/50"
+                            >
                                 Publish
                             </Button>
-                            <Button onClick={handleDeploy}
-                                    className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+                            <Button
+                                onClick={handleDeploy}
+                                className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
+                            >
                                 Deploy
                             </Button>
                         </div>
                     </div>
                 </header>
                 <main className="flex-1 overflow-auto p-4">
-                    <div className="space-y-6 max-w-4xl mx-auto">
+                    <div className="space-y-6 max-w-4xl mx-auto w-full">
                         <Card className="p-6 bg-white/80 backdrop-blur-sm shadow-lg dark:bg-gray-800/80">
                             <Tabs value={inputMode} onValueChange={(value) => setInputMode(value as "text" | "image")}>
-                                <TabsList className="mb-4 w-full grid grid-cols-2">
+                                <TabsList className="mb-4 w-full grid grid-cols-2 sm:flex sm:justify-start">
                                     <TabsTrigger
                                         value="text"
                                         className="data-[state=active]:bg-gradient-to-r from-purple-600 to-indigo-600 data-[state=active]:text-white"
                                     >
-                                        <FileText className="w-4 h-4 mr-2"/>
+                                        <FileText className="w-4 h-4 mr-2" />
                                         Input Text
                                     </TabsTrigger>
                                     <TabsTrigger
                                         value="image"
                                         className="data-[state=active]:bg-gradient-to-r from-purple-600 to-indigo-600 data-[state=active]:text-white"
                                     >
-                                        <ImageIcon className="w-4 h-4 mr-2"/>
+                                        <ImageIcon className="w-4 h-4 mr-2" />
                                         Add Image
                                     </TabsTrigger>
                                 </TabsList>
 
                                 <div className="space-y-4">
                                     <div className="relative group">
-                                        <div
-                                            className="absolute rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                                        <div className="absolute rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                                         <div className="relative">
                                             <Textarea
                                                 placeholder={
@@ -301,22 +305,20 @@ export default function Page() {
                                                 }}
                                                 className="min-h-[100px] w-full bg-white/80  border-2 border-purple-500/20 rounded-lg p-4 font-mono text-sm transition-all duration-300  resize-none overflow-hidden shadow-lg "
                                             />
-                                            <div
-                                                className="absolute bottom-2 right-2 text-xs text-purple-400 opacity-70">
+                                            <div className="absolute bottom-2 right-2 text-xs text-purple-400 opacity-70">
                                                 {prompt.length > 0 && `${prompt.length} characters`}
                                             </div>
                                             {prompt.length > 0 && (
                                                 <div
                                                     className="absolute -bottom-1 left-0 h-1 bg-gradient-to-r from-purple-600 to-indigo-600 transition-all duration-300"
-                                                    style={{width: `${Math.min((prompt.length / 500) * 100, 100)}%`}}
+                                                    style={{ width: `${Math.min((prompt.length / 500) * 100, 100)}%` }}
                                                 ></div>
                                             )}
                                         </div>
                                     </div>
 
                                     {inputMode === "image" && (
-                                        <ImageUpload ref={fileInputRef} onImageSelected={handleImageAnalysis}
-                                                     isLoading={isProcessing}/>
+                                        <ImageUpload ref={fileInputRef} onImageSelected={handleImageAnalysis} isLoading={isProcessing} />
                                     )}
 
                                     <Button
@@ -326,12 +328,12 @@ export default function Page() {
                                     >
                                         {isProcessing ? (
                                             <div className="flex items-center justify-center gap-2">
-                                                <Loader2 className="h-4 w-4 animate-spin"/>
+                                                <Loader2 className="h-4 w-4 animate-spin" />
                                                 <span>Generating...</span>
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-center gap-2">
-                                                <Zap className="h-4 w-4"/>
+                                                <Zap className="h-4 w-4" />
                                                 <span>Generate Code</span>
                                             </div>
                                         )}
@@ -347,14 +349,14 @@ export default function Page() {
                                         value="preview"
                                         className="flex-1 data-[state=active]:bg-gradient-to-r from-purple-600 to-indigo-600 data-[state=active]:text-white"
                                     >
-                                        <FileText className="w-4 h-4 mr-2"/>
+                                        <FileText className="w-4 h-4 mr-2" />
                                         Preview
                                     </TabsTrigger>
                                     <TabsTrigger
                                         value="code"
                                         className="flex-1 data-[state=active]:bg-gradient-to-r from-purple-600 to-indigo-600 data-[state=active]:text-white"
                                     >
-                                        <Code className="w-4 h-4 mr-2"/>
+                                        <Code className="w-4 h-4 mr-2" />
                                         Code
                                     </TabsTrigger>
                                 </TabsList>
@@ -363,23 +365,28 @@ export default function Page() {
                                         selectedFile.name.endsWith(".html") ? (
                                             <iframe
                                                 srcDoc={selectedFile.content}
-                                                className="w-full h-[400px] border rounded"
+                                                className="w-full h-[300px] sm:h-[400px] border rounded"
                                                 title="Code Preview"
                                             />
                                         ) : (
                                             <CodePreview
                                                 file={selectedFile}
                                                 onSave={async (filename, content) => {
-                                                    setFiles(files.map((f) => (f.name === filename ? {
-                                                        ...f,
-                                                        content
-                                                    } : f)))
+                                                    setFiles(
+                                                        files.map((f) =>
+                                                            f.name === filename
+                                                                ? {
+                                                                    ...f,
+                                                                    content,
+                                                                }
+                                                                : f,
+                                                        ),
+                                                    )
                                                 }}
                                             />
                                         )
                                     ) : (
-                                        <p className="text-center text-gray-500 dark:text-gray-400">No file selected for
-                                            preview.</p>
+                                        <p className="text-center text-gray-500 dark:text-gray-400">No file selected for preview.</p>
                                     )}
                                 </TabsContent>
                                 <TabsContent value="code" className="p-4">
@@ -387,12 +394,11 @@ export default function Page() {
                                         <CodePreview
                                             file={selectedFile}
                                             onSave={async (filename, content) => {
-                                                setFiles(files.map((f) => (f.name === filename ? {...f, content} : f)))
+                                                setFiles(files.map((f) => (f.name === filename ? { ...f, content } : f)))
                                             }}
                                         />
                                     ) : (
-                                        <p className="text-center text-gray-500 dark:text-gray-400">No file selected to
-                                            display code.</p>
+                                        <p className="text-center text-gray-500 dark:text-gray-400">No file selected to display code.</p>
                                     )}
                                 </TabsContent>
                             </Tabs>
@@ -402,21 +408,20 @@ export default function Page() {
                                 <p>
                                     <strong>Note:</strong> This AI is a prototype version and can generate HTML code.
                                 </p>
-                                <p>To deploy the generated code, please click &#34;Publish&#34; first,
-                                    then &#34;Deploy&#34;.</p>
+                                <p>To deploy the generated code, please click &#34;Publish&#34; first, then &#34;Deploy&#34;.</p>
                                 <p>after Deploy it you can check it in your workspace.</p>
                             </AlertDescription>
                         </Alert>
                     </div>
                 </main>
             </div>
-            <div className="w-72 border-l py-4 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80">
+            <div className="w-full lg:w-72 border-t lg:border-l py-4 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80">
                 <div className="p-4 border-b flex items-center space-x-2">
-                    <Code className="text-purple-600 dark:text-purple-400" size={20}/>
+                    <Code className="text-purple-600 dark:text-purple-400" size={20} />
                     <h2 className="font-semibold text-lg text-purple-600 dark:text-purple-400">Project Files</h2>
                 </div>
                 <div className="p-4">
-                    <FileTree files={files} selectedFile={selectedFile} onSelect={setSelectedFile}/>
+                    <FileTree files={files} selectedFile={selectedFile} onSelect={setSelectedFile} />
                 </div>
             </div>
         </div>
