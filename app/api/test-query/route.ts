@@ -8,9 +8,9 @@ import { MongoClient } from "mongodb"
 export async function POST(req: Request) {
     try {
         const { dbType, host, port, username, password, database, query } = await req.json()
+        console.log("request",req)
         console.log("query",query)
-        let result
-
+        let result;
         switch (dbType) {
             case "postgres":
                 result = await executePostgreSQL(host, port, username, password, database, query)
@@ -83,7 +83,7 @@ async function executeMySQL(
     }
 }
 
-type MongoOperation = 'find' | 'insertOne' | 'updateOne' | 'deleteOne';
+type MongoOperation = 'find' | 'insertOne' | 'updateOne' | 'deleteOne' | 'createCollection';
 type MongoParams = {
     filter?: Record<string, unknown>;
     update?: Record<string, unknown>;
@@ -105,8 +105,9 @@ async function executeMongoDB(
         const db = client.db(database);
         const parsedQuery = JSON.parse(query);
         const { collection, operation, ...params } = parsedQuery as { collection: string, operation: MongoOperation };
-
+        console.log("parsedQuery", parsedQuery);
         let result;
+
         switch (operation) {
             case 'find':
                 result = await db.collection(collection).find(params).toArray();
@@ -120,6 +121,9 @@ async function executeMongoDB(
                 break;
             case 'deleteOne':
                 result = await db.collection(collection).deleteOne(params);
+                break;
+            case 'createCollection':
+                result = await db.createCollection(collection);
                 break;
             default:
                 throw new Error(`Unsupported operation: ${operation}`);
