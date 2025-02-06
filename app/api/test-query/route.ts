@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { Pool } from "pg"
-import mysql from "mysql2/promise"
+import mysql, { FieldPacket } from "mysql2/promise"
 import { MongoClient } from "mongodb"
+
 
 
 export async function POST(req: Request) {
@@ -26,7 +27,8 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ success: true, result })
     } catch (error) {
-        return NextResponse.json({ success: false, message: `Database query failed: ${error.message}` }, { status: 500 })
+        const errorMessage = (error as Error).message;
+        return NextResponse.json({ success: false, message: `Database query failed: ${errorMessage}` }, { status: 500 });
     }
 }
 
@@ -65,21 +67,28 @@ async function executeMySQL(
     database: string,
     query: string,
 ) {
-    const connection = await mysql.createConnection({ host, port, user, password, database })
+    const connection = await mysql.createConnection({ host, port, user, password, database });
     try {
-        const [rows, fields] = await connection.execute(query)
+        const [rows, fields] = await connection.execute(query);
         return {
             message: "Query executed successfully",
             rows: rows,
-            fields: fields.map((field: any) => ({
+            fields: fields.map((field: FieldPacket) => ({
                 name: field.name,
                 type: field.type,
             })),
-        }
+        };
     } finally {
-        await connection.end()
+        await connection.end();
     }
 }
+
+type MongoOperation = 'find' | 'insertOne' | 'updateOne' | 'deleteOne';
+type MongoParams = {
+    filter?: Record<string, unknown>;
+    update?: Record<string, unknown>;
+    [key: string]: unknown;
+};
 
 async function executeMongoDB(
     host: string,
@@ -89,22 +98,40 @@ async function executeMongoDB(
     database: string,
     query: string,
 ) {
-    const uri = `mongodb://${user}:${password}@${host}:${port}/${database}`
-    const client = new MongoClient(uri)
+    const uri = `mongodb://${user}:${password}@${host}:${port}/${database}`;
+    const client = new MongoClient(uri);
     try {
-        await client.connect()
-        const db = client.db(database)
-        const parsedQuery = JSON.parse(query)
-        const { collection, operation, ...params } = parsedQuery
-        const result = await db.collection(collection)[operation](params).toArray()
+        await client.connect();
+        const db = client.db(database);
+        const parsedQuery = JSON.parse(query);
+        const { collection, operation, ...params } = parsedQuery as { collection: string, operation: MongoOperation };
+
+        let result;
+        switch (operation) {
+            case 'find':
+                result = await db.collection(collection).find(params).toArray();
+                break;
+            case 'insertOne':
+                result = await db.collection(collection).insertOne(params);
+                break;
+            case 'updateOne':
+                const { filter, update } = params as MongoParams;
+                result = await db.collection(collection).updateOne(filter || {}, update || {});
+                break;
+            case 'deleteOne':
+                result = await db.collection(collection).deleteOne(params);
+                break;
+            default:
+                throw new Error(`Unsupported operation: ${operation}`);
+        }
+
         return {
             message: "Query executed successfully",
             rows: result,
-            rowCount: result.length,
-            fields: result.length > 0 ? Object.keys(result[0]).map((key) => ({ name: key })) : [],
-        }
+            rowCount: Array.isArray(result) ? result.length : 1,
+            fields: Array.isArray(result) && result.length > 0 ? Object.keys(result[0]).map((key) => ({ name: key })) : [],
+        };
     } finally {
-        await client.close()
+        await client.close();
     }
 }
-

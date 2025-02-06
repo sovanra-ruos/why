@@ -6,8 +6,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Pagination } from "./Pagination"
 import { Input } from "@/components/ui/input"
 
+interface RowData {
+    [key: string]: string | number | boolean | object | null;
+}
+
 interface QueryResultTableProps {
-    result: any
+    result: {
+        rows: RowData[];
+    };
 }
 
 export const QueryResultTable: React.FC<QueryResultTableProps> = ({ result }) => {
@@ -50,7 +56,7 @@ export const QueryResultTable: React.FC<QueryResultTableProps> = ({ result }) =>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {currentRows.map((row: any, index: number) => (
+                        {currentRows.map((row: RowData, index: number) => (
                             <TableRow key={index}>
                                 {columns.map((column) => (
                                     <TableCell key={`${index}-${column}`}>
@@ -66,4 +72,3 @@ export const QueryResultTable: React.FC<QueryResultTableProps> = ({ result }) =>
         </div>
     )
 }
-

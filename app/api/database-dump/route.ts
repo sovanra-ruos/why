@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { Client } from "pg"
-import mysql from "mysql2/promise"
+import mysql, { RowDataPacket } from "mysql2/promise"
 import { MongoClient } from "mongodb"
 
 export async function POST(req: Request) {
@@ -113,15 +113,15 @@ async function dumpMySQL(
     const connection = await mysql.createConnection({ host, port, user, password, database })
 
     try {
-        const [tables] = await connection.query("SHOW TABLES")
+        const [tables] = await connection.query<RowDataPacket[]>("SHOW TABLES")
         let dumpContent = ""
 
         for (const tableRow of tables) {
             const tableName = tableRow[`Tables_in_${database}`]
-            const [createTableResult] = await connection.query(`SHOW CREATE TABLE ${tableName}`)
+            const [createTableResult] = await connection.query<RowDataPacket[]>(`SHOW CREATE TABLE ${tableName}`)
             dumpContent += createTableResult[0]["Create Table"] + ";\n\n"
 
-            const [rows] = await connection.query(`SELECT * FROM ${tableName}`)
+            const [rows] = await connection.query<RowDataPacket[]>(`SELECT * FROM ${tableName}`)
             for (const row of rows) {
                 const columns = Object.keys(row).join(", ")
                 const values = Object.values(row)
