@@ -5,7 +5,23 @@ import IconCloud from "@/components/ui/icon-cloud";
 const slugs = [
     "typescript",
     "javascript",
+    "java",
+    "spring",
+    "springboot",
+    "react",
+    "angular",
+    "vue",
+    "nextjs",
+    "flutter",
+    "android",
+    "html5",
+    "css3",
+    "nodejs",
+    "express",
+    "jenkins",
+    "kubernetes",
     "dart",
+    "argocd",
     "java",
     "react",
     "flutter",
@@ -33,7 +49,6 @@ const slugs = [
     "androidstudio",
     "sonarqube",
     "figma",
-    "spring"
 ];
 
 export function IconCloudDemo() {
@@ -48,7 +63,7 @@ export function IconCloudDemo() {
     }
 
     return (
-        <div className="relative flex size-full max-w-lg items-center justify-center overflow-hidden rounded-lg  bg-background px-20 pb-20 pt-8 ">
+        <div className="relative flex size-full max-w-lg items-center justify-center overflow-hidden rounded-lg  bg-background px-20 pb-20 pt-8  dark:bg-gray-900">
             <IconCloud iconSlugs={slugs} />
         </div>
     );

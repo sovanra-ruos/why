@@ -144,7 +144,7 @@ export default function StorageSection() {
                 >
                     {deploymentFeatures.map((feature, index) => (
                         <motion.div key={index} variants={itemVariants}>
-                            <Card className="border-2 h-full hover:shadow-xl border-gray-100 hover:border-purple-500 transition duration-200 ease-in-out hover:cursor-pointer">
+                            <Card className="border-2 h-full hover:shadow-xl border-gray-100 hover:border-purple-500 transition duration-200 ease-in-out hover:cursor-pointer dark:border-gray-700 dark:hover:border-purple-500">
                                 <CardHeader>
                                     <motion.div
                                         className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4"

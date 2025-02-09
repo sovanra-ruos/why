@@ -81,7 +81,7 @@ export default function TerminalPage() {
     }, [activeTab, currentLineIndex, tabs])
 
     return (
-        <section className="bg-gray-50 py-8 md:py-8">
+        <section className="bg-gray-50 py-8 md:py-8 dark:bg-gray-800">
             <div className="container mx-auto px-4">
             
                 <div className="text-center">
@@ -89,16 +89,16 @@ export default function TerminalPage() {
                         Work with the Tools You Already Love
                     </AnimatedGradientText>
                 </div>
-                <div className="w-full bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="w-full bg-white rounded-lg shadow-lg overflow-hidden dark:bg-gray-900">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         {/* Responsive Tabs List */}
                         <div className="overflow-x-auto">
-                            <TabsList className="flex flex-wrap w-full bg-gray-100 p-1">
+                            <TabsList className="flex flex-wrap w-full bg-gray-100 p-1 dark:bg-gray-700">
                                 {tabs.map((tab) => (
                                     <TabsTrigger
                                         key={tab.id}
                                         value={tab.id}
-                                        className="flex-1 text-purple-700 min-w-[120px] max-w-full text-center px-2 py-1 data-[state=active]:bg-white data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
+                                        className="flex-1 text-purple-700 min-w-[120px] max-w-full text-center px-2 py-1 data-[state=active]:bg-white data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-gray-200"
                                     >
                                         {tab.label}
                                     </TabsTrigger>

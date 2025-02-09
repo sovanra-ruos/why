@@ -29,8 +29,8 @@ export default function ServicesPage() {
                             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 md:mb-8">
                                 <span className="text-purple-400">Learn How </span>
                                 <span className="text-blue-500 dark:text-blue-400">
-                  Cloudinator
-                </span>
+                                Cloudinator
+                                </span>
                                 <br className="hidden sm:inline" />
                                 <span className="text-purple-400">Can Build Your Product </span>
                                 <span className="text-blue-500 dark:text-blue-400">Fast</span>
