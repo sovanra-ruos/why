@@ -3,8 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Download } from "lucide-react"
+import { Database, Table } from "lucide-react"
 
 interface DatabaseDumpProps {
     dbType: string
@@ -24,17 +23,8 @@ export const DatabaseDump: React.FC<DatabaseDumpProps> = ({ dbType, host, port, 
         try {
             const response = await fetch("/api/database-dump", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    dbType,
-                    host,
-                    port,
-                    username,
-                    password,
-                    database,
-                }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ dbType, host, port, username, password, database }),
             })
 
             if (!response.ok) {
@@ -51,7 +41,6 @@ export const DatabaseDump: React.FC<DatabaseDumpProps> = ({ dbType, host, port, 
             document.body.appendChild(a)
             a.click()
             window.URL.revokeObjectURL(url)
-
         } catch (error) {
             console.error("Error dumping database:", error)
         } finally {
@@ -64,17 +53,8 @@ export const DatabaseDump: React.FC<DatabaseDumpProps> = ({ dbType, host, port, 
         try {
             const response = await fetch("/api/data-dump", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    dbType,
-                    host,
-                    port,
-                    username,
-                    password,
-                    database,
-                }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ dbType, host, port, username, password, database }),
             })
 
             if (!response.ok) {
@@ -91,7 +71,6 @@ export const DatabaseDump: React.FC<DatabaseDumpProps> = ({ dbType, host, port, 
             document.body.appendChild(a)
             a.click()
             window.URL.revokeObjectURL(url)
-
         } catch (error) {
             console.error("Error backing up data:", error)
         } finally {
@@ -100,40 +79,44 @@ export const DatabaseDump: React.FC<DatabaseDumpProps> = ({ dbType, host, port, 
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-lg font-semibold text-purple-600 dark:text-purple-400">Database Backup</CardTitle>
-            </CardHeader>
-            <CardContent>
+        <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
                 <Button
                     onClick={handleDumpDatabase}
                     disabled={isDumpLoading}
-                    className="w-full bg-purple-500 text-white hover:bg-purple-600 flex items-center justify-center mb-2"
+                    className="bg-gradient-to-r from-purple-500 to-purple-700 text-white hover:from-purple-600 hover:to-purple-800 transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center p-6 rounded-xl shadow-lg"
                 >
                     {isDumpLoading ? (
-                        "Creating Backup..."
+                        <span className="flex items-center">
+              <Database className="animate-pulse mr-2 h-6 w-6" />
+              Backing up...
+            </span>
                     ) : (
                         <>
-                            <Download className="mr-2 h-4 w-4" />
-                            Backup Database
+                            <Database className="mr-2 h-6 w-6" />
+                            <span className="text-lg font-semibold">Backup Database</span>
                         </>
                     )}
                 </Button>
                 <Button
                     onClick={handleBackupData}
                     disabled={isBackupLoading}
-                    className="w-full bg-blue-500 text-white hover:bg-blue-600 flex items-center justify-center"
+                    className="bg-gradient-to-r from-blue-500 to-blue-700 text-white hover:from-blue-600 hover:to-blue-800 transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center p-6 rounded-xl shadow-lg"
                 >
                     {isBackupLoading ? (
-                        "Backing up Data..."
+                        <span className="flex items-center">
+              <Table className="animate-pulse mr-2 h-6 w-6" />
+              Backing up...
+            </span>
                     ) : (
                         <>
-                            <Download className="mr-2 h-4 w-4" />
-                            Backup Data
+                            <Table className="mr-2 h-6 w-6" />
+                            <span className="text-lg font-semibold">Backup Data</span>
                         </>
                     )}
                 </Button>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     )
 }
+
