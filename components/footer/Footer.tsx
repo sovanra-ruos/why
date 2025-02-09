@@ -34,14 +34,14 @@ const partners = [
   {
     name: "MPTC",
     src: "/mptc.png",
-    height: 200,
-    width: 200,
+    height: 210,
+    width: 210,
   },
   {
     name: "ISTAD",
     src: "/istad-logo.png",
-    height: 200,
-    width: 200,
+    height: 185,
+    width: 185,
   },
 ];
 
