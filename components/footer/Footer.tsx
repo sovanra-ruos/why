@@ -45,6 +45,7 @@ const partners = [
   },
 ];
 
+
 export default function Footer() {
   return (
     <footer className="bg-gray-50 dark:bg-gray-900 border-t py-10">
