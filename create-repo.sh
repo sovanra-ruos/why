@@ -9,7 +9,7 @@ if [ -z "$PROJECT_ID" ]; then
   exit 1
 fi
 
-PROJECT_DIR="/tmp/$PROJECT_ID"
+PROJECT_DIR="/app/tmp/$PROJECT_ID"
 GIT_REMOTE_URL="https://git.cloudinator.cloud/cloudinator-ai/${PROJECT_ID}.git"
 
 # Ensure the directory exists

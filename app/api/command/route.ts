@@ -4,35 +4,24 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export async function POST(req: Request) {
     try {
-        const { prompt, dbType } = await req.json()
-
-        if (!["postgres", "mysql"].includes(dbType)) {
-            return new Response(JSON.stringify({ error: "Unsupported database type" }), {
-                status: 400,
-                headers: { "Content-Type": "application/json" },
-            })
-        }
-
+        const { prompt } = await req.json()
         const model = genAI.getGenerativeModel({ model: "gemini-pro" })
 
-        const codePrompt = `Generate a ${dbType.toUpperCase()} query for the following request. Respond with ONLY the raw SQL command, no formatting, no explanations, no backticks: ${prompt}`
+        // Add specific instructions for code generation
+        const codePrompt = `You are a code generator. Please generate code for the following request. Only respond with the code, no explanations: ${prompt}`
 
         const result = await model.generateContent(codePrompt)
         const response = await result.response
-        const query = response.text().trim()
+        const text = response.text()
 
-        // Remove any potential backticks or language tags that might have been generated
-        const cleanQuery = query.replace(/^```[\w]*\n?|\n?```$/g, "").trim()
-
-        return new Response(JSON.stringify({ query: cleanQuery }), {
+        return new Response(JSON.stringify({ response: text }), {
             headers: { "Content-Type": "application/json" },
         })
     } catch (error) {
         console.error("Error:", error)
-        return new Response(JSON.stringify({ error: "Failed to generate query" }), {
+        return new Response(JSON.stringify({ error: "Failed to process request" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
         })
     }
 }
-
