@@ -26,20 +26,23 @@ const contact = {
 
 const partners = [
   {
-    name: "CBRD",
-    src: "/cbrd.png",
-    height: 200,
-    width: 200,
-  },
-  {
     name: "MPTC",
     src: "/mptc.png",
+    linkUrl: "https://mptc.gov.kh/",
     height: 210,
     width: 210,
   },
   {
+    name: "CBRD",
+    src: "/cbrd.png",
+    linkUrl: "http://www.cbrd.com.kh/",
+    height: 200,
+    width: 200,
+  },
+  {
     name: "ISTAD",
     src: "/istad-logo.png",
+    linkUrl: "https://www.cstad.edu.kh/",
     height: 185,
     width: 185,
   },
@@ -134,13 +137,15 @@ export default function Footer() {
             <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-4 place-items-center">
               {partners.map((partner) => (
                 <div key={partner.name} className="w-26 h-26 relative">
-                  <Image
-                    src={partner.src}
-                    alt={partner.name}
-                    width={partner.width}
-                    height={partner.height}
-                    className="rounded-lg transition-transform hover:scale-105"
-                  />
+                  <Link href={partner.linkUrl} target="_blank">
+                    <Image
+                      src={partner.src}
+                      alt={partner.name}
+                      width={partner.width}
+                      height={partner.height}
+                      className="rounded-lg transition-transform hover:scale-105"
+                    />
+                  </Link>
                 </div>
               ))}
             </div>

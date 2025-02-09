@@ -223,7 +223,7 @@ const WaveBackground = () => {
         <motion.path
           fill="#9333EA"
           fillOpacity="0.4"
-          className="dark:fill-gray-600"
+          className=""
           d="M0,128L48,144C96,160,192,192,288,186.7C384,181,480,139,576,149.3C672,160,768,224,864,229.3C960,235,1056,181,1152,170.7C1248,160,1344,192,1392,208L1440,224L1440,400L1392,400C1344,400,1248,400,1152,400C1056,400,960,400,864,400C768,400,672,400,576,400C480,400,384,400,288,400C192,400,96,400,48,400L0,400Z"
           animate={{
             d: [
@@ -269,7 +269,7 @@ const FloatingCard: React.FC<FloatingCardProps> = ({ card, index }) => {
           ease: "easeInOut",
         }}
       >
-        <Card className="bg-white/95 backdrop-blur-sm h-full shadow-lg">
+        <Card className="bg-white/95 backdrop-blur-sm h-full shadow-lg dark:bg-gray-800">
           <CardHeader>
             <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center mb-4">
               <Icon className="w-6 h-6 text-white" />
@@ -279,7 +279,7 @@ const FloatingCard: React.FC<FloatingCardProps> = ({ card, index }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription className="text-muted-foreground dark:text-gray-300">
               {card.description}
             </CardDescription>
           </CardContent>

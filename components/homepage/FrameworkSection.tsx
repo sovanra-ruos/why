@@ -4,9 +4,9 @@ import React, { useState } from "react";
 import { AnimatedGradientText } from "../AnimatedGradientText";
 
 const PixelLogo: React.FC<{ d: string; viewBox?: string }> = ({
-                                                                  d,
-                                                                  viewBox = "0 0 24 24",
-                                                              }) => (
+                                                                d,
+                                                                viewBox = "0 0 24 24",
+                                                                }) => (
     <svg viewBox={viewBox} className="w-full h-full">
         <path d={d} fill="currentColor" />
     </svg>

@@ -12,7 +12,7 @@ export default function HomePage() {
   return (
     <>
       <ParallaxProvider>
-        <HeroSection />
+      <HeroSection />
       </ParallaxProvider>
       <FeatureSection />
       <ServiceComponent />
