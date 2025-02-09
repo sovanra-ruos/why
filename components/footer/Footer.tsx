@@ -132,7 +132,7 @@ export default function Footer() {
           {/* Partners - Centered grid */}
           <div className="space-y-4 grid place-content-center">
             <h3 className="text-lg font-semibold text-purple-500 mb-4 text-center">
-              Sponsor
+              Sponsors
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-4 place-items-center">
               {partners.map((partner) => (
