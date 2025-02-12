@@ -20,7 +20,7 @@ export const metadata: Metadata = {
         siteName: "Cloudinator",
         images: [
             {
-                url: "https://cloudinator.istad.co/media/api/v1/medias/view/4a2a1572-3c7f-4b20-bf81-caa094e08d4b.png",
+                url: "https://cloudinator.istad.co/media/api/v1/medias/view/2f96e228-ff19-471a-8880-9188a3d2a387.png",
                 width: 1200,
                 height: 630,
                 alt: "Start Building with Cloudinator",
