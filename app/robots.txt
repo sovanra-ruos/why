@@ -1,0 +1,4 @@
+User-Agent: *
+Allow: /
+
+Sitemap: https://cloudinator.istad.co/sitemap.xml
